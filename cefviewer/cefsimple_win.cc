@@ -3,10 +3,11 @@
 // can be found in the LICENSE file.
 
 #include <windows.h>
+#include <filesystem>
 
 #include "include/cef_command_line.h"
 #include "include/cef_sandbox_win.h"
-#include "tests/cefsimple/simple_app.h"
+#include "simple_app.h"
 
 // When generating projects with CMake the CEF_USE_SANDBOX value will be defined
 // automatically if using the required compiler version. Pass -DUSE_SANDBOX=OFF
@@ -58,6 +59,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance,
 
   // Specify CEF global settings here.
   CefSettings settings;
+  settings.windowless_rendering_enabled = true;
 
   if (command_line->HasSwitch("enable-chrome-runtime")) {
     // Enable experimental Chrome runtime. See issue #2969 for details.
@@ -83,5 +85,13 @@ int APIENTRY wWinMain(HINSTANCE hInstance,
   // Shut down CEF.
   CefShutdown();
 
-  return 0;
+  // browser->GetHost()->Print();
+  // Convert BMP to MP4 using FFMPEG
+  std::string cur_path = std::filesystem::current_path().string();
+  std::string cmd = "ffmpeg -threads auto -y -r 21 -i \"" + cur_path +
+                    "\\tmp\\%d.bmp\" -preset ultrafast -r 10 \"" +
+                    cur_path + "\\tmp\\output.mp4\"";
+  int ret = std::system(cmd.c_str());
+
+  return ret;
 }

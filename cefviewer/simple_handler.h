@@ -6,13 +6,15 @@
 #define CEF_TESTS_CEFSIMPLE_SIMPLE_HANDLER_H_
 
 #include "include/cef_client.h"
+#include "include/cef_render_handler.h"
 
 #include <list>
 
 class SimpleHandler : public CefClient,
                       public CefDisplayHandler,
                       public CefLifeSpanHandler,
-                      public CefLoadHandler {
+                      public CefLoadHandler,
+                      public CefRenderHandler {
  public:
   explicit SimpleHandler(bool use_views);
   ~SimpleHandler();
@@ -28,6 +30,9 @@ class SimpleHandler : public CefClient,
     return this;
   }
   virtual CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
+  virtual CefRefPtr<CefRenderHandler> GetRenderHandler() override {
+    return this;
+  }
 
   // CefDisplayHandler methods:
   virtual void OnTitleChange(CefRefPtr<CefBrowser> browser,
@@ -45,6 +50,17 @@ class SimpleHandler : public CefClient,
                            const CefString& errorText,
                            const CefString& failedUrl) override;
 
+  // CefRenderHandler methods:
+  virtual void GetViewRect(CefRefPtr<CefBrowser> browser,
+                                          CefRect& rect) override;
+
+  virtual void OnPaint(CefRefPtr<CefBrowser> browser,
+                              PaintElementType type,
+                              const RectList& dirtyRects,
+                              const void* buffer,
+                              int width,
+                              int height) override;
+
   // Request that all existing browser windows close.
   void CloseAllBrowsers(bool force_close);
 
@@ -58,6 +74,9 @@ class SimpleHandler : public CefClient,
   void PlatformTitleChange(CefRefPtr<CefBrowser> browser,
                            const CefString& title);
 
+  // Used in OnPaint to render browser to bmp
+  void SaveBufferAsBitmap(const void* buffer, int width, int height);
+
   // True if the application is using the Views framework.
   const bool use_views_;
 
@@ -66,6 +85,9 @@ class SimpleHandler : public CefClient,
   BrowserList browser_list_;
 
   bool is_closing_;
+
+  // counter to number BMP files
+  int bmp_counter_ = 0;
 
   // Include the default reference counting implementation.
   IMPLEMENT_REFCOUNTING(SimpleHandler);

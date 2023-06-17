@@ -2,10 +2,9 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "tests/cefsimple/simple_handler.h"
-
 #include <sstream>
 #include <string>
+#include <iostream>
 
 #include "include/base/cef_callback.h"
 #include "include/cef_app.h"
@@ -14,6 +13,7 @@
 #include "include/views/cef_window.h"
 #include "include/wrapper/cef_closure_task.h"
 #include "include/wrapper/cef_helpers.h"
+#include "simple_handler.h"
 
 namespace {
 
@@ -128,6 +128,20 @@ void SimpleHandler::OnLoadError(CefRefPtr<CefBrowser> browser,
   frame->LoadURL(GetDataURI(ss.str(), "text/html"));
 }
 
+void SimpleHandler::GetViewRect(CefRefPtr<CefBrowser> browser, CefRect& rect) {
+  rect = CefRect(0, 0, 1080, 1920);
+}
+
+void SimpleHandler::OnPaint(CefRefPtr<CefBrowser> browser,
+                            PaintElementType type,
+                            const RectList& dirtyRects,
+                            const void* buffer,
+                            int width,
+                            int height) {
+  // Save buffer to BMP file
+  SaveBufferAsBitmap(buffer, width, height);
+}
+
 void SimpleHandler::CloseAllBrowsers(bool force_close) {
   if (!CefCurrentlyOn(TID_UI)) {
     // Execute on the UI thread.
@@ -153,4 +167,52 @@ bool SimpleHandler::IsChromeRuntimeEnabled() {
     value = command_line->HasSwitch("enable-chrome-runtime") ? 1 : 0;
   }
   return value == 1;
+}
+
+void SimpleHandler::SaveBufferAsBitmap(const void* buffer, int width, int height) {
+  // Create a bitmap file in the /tmp directory
+  std::string filepath = "tmp/" + std::to_string(bmp_counter_++) + ".bmp";
+
+  // Open the file for writing
+  FILE* file = fopen(filepath.c_str(), "wb");
+  if (!file) {
+    std::cerr << "Failed to create bitmap file!" << std::endl;
+    return;
+  }
+
+  // Write bitmap header
+  BITMAPFILEHEADER bmpFileHeader;
+  bmpFileHeader.bfType = 0x4D42;  // "BM"
+  bmpFileHeader.bfSize =
+      sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + width * height * 4;
+  bmpFileHeader.bfReserved1 = 0;
+  bmpFileHeader.bfReserved2 = 0;
+  bmpFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
+  fwrite(&bmpFileHeader, sizeof(BITMAPFILEHEADER), 1, file);
+
+  // Write bitmap info header
+  BITMAPINFOHEADER bmpInfoHeader;
+  bmpInfoHeader.biSize = sizeof(BITMAPINFOHEADER);
+  bmpInfoHeader.biWidth = width;
+  bmpInfoHeader.biHeight =
+      -height;  // Negative height to flip the image vertically
+  bmpInfoHeader.biPlanes = 1;
+  bmpInfoHeader.biBitCount = 32;  // RGBA format
+  bmpInfoHeader.biCompression = BI_RGB;
+  bmpInfoHeader.biSizeImage = width * height * 4;
+  bmpInfoHeader.biXPelsPerMeter = 0;
+  bmpInfoHeader.biYPelsPerMeter = 0;
+  bmpInfoHeader.biClrUsed = 0;
+  bmpInfoHeader.biClrImportant = 0;
+
+  fwrite(&bmpInfoHeader, sizeof(BITMAPINFOHEADER), 1, file);
+
+  // Write pixel data
+  fwrite(buffer, 1, width * height * 4, file);
+
+  // Close the file
+  fclose(file);
+
+  std::cout << "Bitmap saved: " << filepath << std::endl;
 }

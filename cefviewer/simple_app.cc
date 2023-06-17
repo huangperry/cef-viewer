@@ -2,16 +2,17 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "tests/cefsimple/simple_app.h"
+#include "simple_app.h"
 
 #include <string>
+#include <filesystem>
 
 #include "include/cef_browser.h"
 #include "include/cef_command_line.h"
 #include "include/views/cef_browser_view.h"
 #include "include/views/cef_window.h"
 #include "include/wrapper/cef_helpers.h"
-#include "tests/cefsimple/simple_handler.h"
+#include "simple_handler.h"
 
 namespace {
 
@@ -77,7 +78,10 @@ class SimpleBrowserViewDelegate : public CefBrowserViewDelegate {
 
 }  // namespace
 
-SimpleApp::SimpleApp() {}
+SimpleApp::SimpleApp() {
+    // Initialize /tmp folder
+  std::filesystem::create_directory("tmp");
+}
 
 void SimpleApp::OnContextInitialized() {
   CEF_REQUIRE_UI_THREAD();
@@ -121,6 +125,8 @@ void SimpleApp::OnContextInitialized() {
     // CreateWindowEx().
     window_info.SetAsPopup(nullptr, "cefsimple");
 #endif
+
+    window_info.SetAsWindowless(nullptr);
 
     // Create the first browser window.
     CefBrowserHost::CreateBrowser(window_info, handler, url, browser_settings,
