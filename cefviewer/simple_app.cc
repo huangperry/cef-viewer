@@ -6,6 +6,7 @@
 
 #include <string>
 #include <filesystem>
+#include <iostream>
 
 #include "include/cef_browser.h"
 #include "include/cef_command_line.h"
@@ -83,6 +84,13 @@ SimpleApp::SimpleApp() {
   std::filesystem::create_directory("tmp");
 }
 
+void SimpleApp::OnBeforeCommandLineProcessing(
+    const CefString& process_type,
+    CefRefPtr<CefCommandLine> command_line) {
+  command_line->AppendSwitch("disable-gpu");
+  command_line->AppendSwitch("disable-gpu-compositing");
+}
+
 void SimpleApp::OnContextInitialized() {
   CEF_REQUIRE_UI_THREAD();
 
@@ -99,6 +107,7 @@ void SimpleApp::OnContextInitialized() {
 
   // Specify CEF browser settings here.
   CefBrowserSettings browser_settings;
+  browser_settings.webgl = STATE_DISABLED;
 
   std::string url;
 
@@ -126,7 +135,7 @@ void SimpleApp::OnContextInitialized() {
     window_info.SetAsPopup(nullptr, "cefsimple");
 #endif
 
-    window_info.SetAsWindowless(nullptr);
+    // window_info.SetAsWindowless(nullptr);
 
     // Create the first browser window.
     CefBrowserHost::CreateBrowser(window_info, handler, url, browser_settings,

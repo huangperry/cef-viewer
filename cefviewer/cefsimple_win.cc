@@ -59,7 +59,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance,
 
   // Specify CEF global settings here.
   CefSettings settings;
-  settings.windowless_rendering_enabled = true;
+  // settings.windowless_rendering_enabled = true;
 
   if (command_line->HasSwitch("enable-chrome-runtime")) {
     // Enable experimental Chrome runtime. See issue #2969 for details.

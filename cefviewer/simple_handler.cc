@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string>
 #include <iostream>
+#include <filesystem>
+#include <Windows.h>
 
 #include "include/base/cef_callback.h"
 #include "include/cef_app.h"
@@ -58,7 +60,7 @@ void SimpleHandler::OnTitleChange(CefRefPtr<CefBrowser> browser,
     }
   } else if (!IsChromeRuntimeEnabled()) {
     // Set the title of the window using platform APIs.
-    PlatformTitleChange(browser, title);
+    // PlatformTitleChange(browser, title);
   }
 }
 
@@ -67,6 +69,40 @@ void SimpleHandler::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
 
   // Add to the list of existing browsers.
   browser_list_.push_back(browser);
+
+  // Start FFMPEG record
+  CefWindowHandle windowHandle = browser->GetHost()->GetWindowHandle();
+  SetWindowText(windowHandle, L"cefviewer");
+  std::string cur_path = std::filesystem::current_path().string();
+  std::string cmd =
+      "ffmpeg -y -f gdigrab -i title=\"cefviewer\" -framerate 30 -c:v libx264 "
+      "-preset slow -pix_fmt yuv420p \"" + cur_path + "\\tmp\\output.mp4\"";
+  // int ret = system(cmd.c_str());
+  // std::cout << ret << std::endl;
+  std::cout << cmd << std::endl;
+  const char* command = cmd.c_str();
+
+  // Create process information
+  STARTUPINFOA si;
+  PROCESS_INFORMATION pi;
+  ZeroMemory(&si, sizeof(si));
+  ZeroMemory(&pi, sizeof(pi));
+  si.cb = sizeof(si);
+
+  // Create process without showing a window
+  if (CreateProcessA(NULL, const_cast<LPSTR>(command), NULL, NULL, FALSE,
+                     CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+    // Process created successfully
+    // You can continue executing your application here
+
+    // Close process and thread handles
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+  } else {
+    // Failed to create process
+    // Handle error condition
+    std::cout << "CreateProcessA failed" << std::endl;
+  }
 }
 
 bool SimpleHandler::DoClose(CefRefPtr<CefBrowser> browser) {

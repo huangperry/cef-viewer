@@ -61,6 +61,12 @@ class SimpleHandler : public CefClient,
                               int width,
                               int height) override;
 
+  // CefAudioHandler methods:
+  //virtual void OnAudioStreamPacket(CefRefPtr<CefBrowser> browser,
+  //                           const float** data,
+  //                           int frames,
+  //                           int64_t pts) override;
+
   // Request that all existing browser windows close.
   void CloseAllBrowsers(bool force_close);
 
